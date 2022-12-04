@@ -6,7 +6,7 @@ from discord import Interaction
 intents = discord.Intents.all()
 intents.message_content = True
 
-TOKEN = "MTA0ODc3MTA2NjcxNTE4OTM0OA.GlRYJ-.CXng3AA5FJdwEPx1sHPtGtlTiA0K7RFNMQSHF8"
+TOKEN = "MTA0ODc3MTA2NjcxNTE4OTM0OA.G_x079.1BIEh2ZNBL0mmdLcexXukB1tXEPQxdN3ds0PMA"
 BOT_PREFIX = "$"
 
 intents = discord.Intents.all()
