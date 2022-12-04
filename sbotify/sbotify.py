@@ -1,12 +1,15 @@
 import os
+from dotenv import load_dotenv
 import discord
 from discord.ext import commands
-from discord import Interaction
+from discord import Spotify
+
+load_dotenv()
 
 intents = discord.Intents.all()
 intents.message_content = True
 
-TOKEN = "MTA0ODc3MTA2NjcxNTE4OTM0OA.G_x079.1BIEh2ZNBL0mmdLcexXukB1tXEPQxdN3ds0PMA"
+TOKEN = os.getenv("DISCORD_TOKEN")
 BOT_PREFIX = "$"
 
 intents = discord.Intents.all()
@@ -23,6 +26,23 @@ async def ping(ctx):
     await ctx.send("PONG")
 
 #BOT
+@bot.command()
+async def song(ctx, user: discord.Member = None):
+    user = user or ctx.author
+    spotify_song = next((activity for activity in user.activities if isinstance(activity, discord.Spotify)), None)
+
+    for activity in user.activities:
+        if isinstance(activity, Spotify):
+            await ctx.send(
+                f"{user} is listening to {activity.title} by {activity.artist}.\n")
+    await ctx.send(f"https://open.spotify.com/track/{spotify_song.track_id}")
+            
+@bot.command()
+async def gif(ctx, user: discord.Member = None):
+    user = user or ctx.author
+    
+
+
 @bot.command(name = "join")
 async def join(ctx):
     if not ctx.message.author.voice:
@@ -36,7 +56,6 @@ async def join(ctx):
 async def leave(ctx):
     voice_channel = ctx.message.guild.voice_client
     await voice_channel.disconnect()
-
 
 
 
