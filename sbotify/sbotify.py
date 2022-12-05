@@ -3,15 +3,25 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from discord import Spotify
+import giphy_client
+from giphy_client.rest import ApiException
+from pprint import pprint
+import random
+import requests
+import json
 
 load_dotenv()
 
 intents = discord.Intents.all()
 intents.message_content = True
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-BOT_PREFIX = "$"
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+GIPHY_TOKEN = os.getenv("GIPHY_TOKEN")
+TENOR_TOKEN = os.getenv("TENOR_TOKEN")
 
+giphy_api_instance = giphy_client.DefaultApi()  #including giphy api token
+
+BOT_PREFIX = "."
 intents = discord.Intents.all()
 bot = commands.Bot(BOT_PREFIX, intents = discord.Intents.all())
 
@@ -24,6 +34,30 @@ test_server = 910335283025805375
 @bot.command(name = "ping", description="PONG", guild_ids=[test_server])
 async def ping(ctx):
     await ctx.send("PONG")
+
+#GIPHY
+async def search_gifs_giphy(query):
+    try:
+        response = giphy_api_instance.gifs_search_get(GIPHY_TOKEN, query, limit=3, rating="g")
+        gif_list = list(response.data)
+        gif = random.choices(gif_list)
+        return gif[0].url
+    except ApiException as e:
+        return "Exception when calling DefaultApi -> gifs_search_get: %s\n" %e
+
+#TENOR
+async def search_tenor(query):
+    apikey = str(TENOR_TOKEN)
+    ckey = "Sbotify"
+    lmt = 7
+    try:
+        r = requests.get("https://tenor.googleapis.com/v2/search?q=%s&key=%s&client_key=%s&limit=%s" % (query, apikey, ckey, lmt))
+        #tenor_list = json.loads(r.content)
+        data = r.json()
+        
+        return data['results'][0]['media'][0]['gif']['url'] 
+    except ApiException as e:
+        return "Exception when calling DefaultApi -> gifs_search_get: %s\n" %e
 
 #BOT
 @bot.command()
@@ -38,9 +72,25 @@ async def song(ctx, user: discord.Member = None):
     await ctx.send(f"https://open.spotify.com/track/{spotify_song.track_id}")
             
 @bot.command()
-async def gif(ctx, user: discord.Member = None):
+async def giphy(ctx, user: discord.Member = None):
     user = user or ctx.author
-    
+    for activity in user.activities:
+        if isinstance(activity, Spotify):
+            search_input = activity.title + " " + activity.artist + " music"
+            gif = await search_gifs_giphy(search_input)
+            await ctx.send(f"GIF of {activity.artist}: \n" + gif)
+            
+@bot.command()
+async def tenor(ctx, user: discord.Member = None):
+    user = user or ctx.author
+    for activity in user.activities:
+        if isinstance(activity, Spotify):
+            
+            search_input = activity.title + " " + activity.artist
+            gif_url = search_tenor(search_input)
+            embed = discord.Embed()
+            embed.set_image(url=gif_url)
+            await ctx.channel.send(embed=embed)
 
 
 @bot.command(name = "join")
@@ -59,4 +109,4 @@ async def leave(ctx):
 
 
 
-bot.run(TOKEN)
+bot.run(DISCORD_TOKEN)
