@@ -21,7 +21,7 @@ TENOR_TOKEN = os.getenv("TENOR_TOKEN")
 
 giphy_api_instance = giphy_client.DefaultApi()  #including giphy api token
 
-BOT_PREFIX = "."
+BOT_PREFIX = "$"
 intents = discord.Intents.all()
 bot = commands.Bot(BOT_PREFIX, intents = discord.Intents.all())
 
@@ -46,16 +46,16 @@ async def search_gifs_giphy(query):
         return "Exception when calling DefaultApi -> gifs_search_get: %s\n" %e
 
 #TENOR
-async def search_tenor(query):
+@bot.command()
+async def search_tenor(ctx):
     apikey = str(TENOR_TOKEN)
-    ckey = "Sbotify"
     lmt = 7
     try:
-        r = requests.get("https://tenor.googleapis.com/v2/search?q=%s&key=%s&client_key=%s&limit=%s" % (query, apikey, ckey, lmt))
-        #tenor_list = json.loads(r.content)
+        r = requests.get("https://g.tenor.com/v1/search?q=%s&key=%s&limit=%s" % (ctx, apikey, lmt))
         data = r.json()
-        
-        return data['results'][0]['media'][0]['gif']['url'] 
+        return data['media'][0]['gif']['url']
+        #return data['results'][0]['media'][0]['gif']['url'] 
+
     except ApiException as e:
         return "Exception when calling DefaultApi -> gifs_search_get: %s\n" %e
 
@@ -79,15 +79,29 @@ async def giphy(ctx, user: discord.Member = None):
             search_input = activity.title + " " + activity.artist + " music"
             gif = await search_gifs_giphy(search_input)
             await ctx.send(f"GIF of {activity.artist}: \n" + gif)
+
+# @bot.event
+# async def tenor(ctx):
+#     if ctx.author == bot.user:  #safety measures
+#         return
+#     user = user or ctx.author
+
+#     if ctx.content.lower().startswith(f"{BOT_PREFIX}gif"):
+#         gif_url = search_tenor(ctx.content.lower()[5:])
+
+#         embed = discord.Embed()
+#         embed.set_image(url=gif_url)
+#         await ctx.channel.send(embed = embed)
             
 @bot.command()
-async def tenor(ctx, user: discord.Member = None):
-    user = user or ctx.author
+async def tenor(ctx):
+    user = ctx.author
     for activity in user.activities:
         if isinstance(activity, Spotify):
-            
             search_input = activity.title + " " + activity.artist
-            gif_url = search_tenor(search_input)
+
+            gif_url = await search_tenor(search_input)
+
             embed = discord.Embed()
             embed.set_image(url=gif_url)
             await ctx.channel.send(embed=embed)
